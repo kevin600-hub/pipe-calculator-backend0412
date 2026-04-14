@@ -19,13 +19,21 @@ app.add_middleware(
 
 # --- 2. 初始化 Firebase (确保 serviceAccountKey.json 在同级目录) ---
 try:
-    cred = credentials.Certificate("serviceAccountKey.json")
+    # 修改这里，加上 Render 特有的路径前缀
+    cred = credentials.Certificate("/etc/secrets/serviceAccountKey.json")
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
     db = firestore.client()
     print("✅ Firebase 初始化成功")
 except Exception as e:
-    print(f"❌ Firebase 初始化失败: {e}")
+    # 如果本地测试也需要，可以做个兼容
+    try:
+        cred = credentials.Certificate("serviceAccountKey.json")
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app(cred)
+        db = firestore.client()
+    except:
+        print(f"❌ Firebase 初始化失败: {e}")
 
 # --- 3. Stripe 配置 (目前先留空，后续填入) ---
 # 从 Render 的环境变量中读取密钥
