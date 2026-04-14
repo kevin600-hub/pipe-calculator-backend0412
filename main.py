@@ -19,16 +19,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- 2. 初始化 Firebase (增加详细报错日志) ---
+# --- 2. 初始化 Firebase (保持原样) ---
 db = None
 try:
-    # 尝试读取 Render Secret File 路径
     secret_path = "/etc/secrets/serviceAccountKey.json"
     if os.path.exists(secret_path):
         cred = credentials.Certificate(secret_path)
         print(f"✅ 找到 Secret File: {secret_path}")
     else:
-        # 本地测试路径
         cred = credentials.Certificate("serviceAccountKey.json")
         print("ℹ️ 使用本地 serviceAccountKey.json")
 
@@ -49,7 +47,7 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "https://pipe-calc-frontend0412.vercel.
 def home():
     return {"message": "管道计算器后端已准备就绪", "firebase_status": "ready" if db else "failed"}
 
-# --- 接口 A: 创建支付跳转链接 (带全自动报错监控) ---
+# --- 接口 A: 创建支付跳转链接 (仅修正了 stripe.checkout.Session.create) ---
 @app.post("/create-checkout-session")
 async def create_checkout():
     try:
@@ -59,9 +57,9 @@ async def create_checkout():
             print("❌ 错误: STRIPE_API_KEY 环境变量为空！")
             raise Exception("Stripe API Key is missing")
 
-        # 1. 调用 Stripe
+        # 1. 调用 Stripe (修正为新版语法：Session 首字母大写)
         print("DEBUG: 正在调用 Stripe API...")
-        session = stripe.checkout.sessions.create(
+        session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
                 'price_data': {
@@ -86,18 +84,17 @@ async def create_checkout():
             })
             print("✅ Firebase 预记录成功")
         else:
-            print("❌ 错误: Firebase 数据库未连接，无法记录订单")
+            print("❌ 错误: Firebase 数据库未连接")
             raise Exception("Firebase database not initialized")
         
         return {"url": session.url}
 
     except Exception as e:
         print(f"🔥 [致命报错] 接口 /create-checkout-session 崩溃:")
-        print(f"报错简述: {str(e)}")
-        traceback.print_exc() # 打印具体的报错行号和原因
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-# --- 接口 B: 核心计算逻辑 ---
+# --- 接口 B: 核心计算逻辑 (保持原样) ---
 @app.get("/calculate")
 def calculate_flow(session_id: str, q_m3h: float, d_mm: float):
     if not db:
@@ -120,7 +117,7 @@ def calculate_flow(session_id: str, q_m3h: float, d_mm: float):
     except Exception as e:
         return {"error": str(e)}
 
-# --- 接口 D: Webhook ---
+# --- 接口 D: Webhook (保持原样) ---
 @app.post("/webhook")
 async def stripe_webhook(request: Request):
     payload = await request.body()
