@@ -12,6 +12,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 部署时建议改为你的 Vercel 域名
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -27,9 +28,13 @@ except Exception as e:
     print(f"❌ Firebase 初始化失败: {e}")
 
 # --- 3. Stripe 配置 (目前先留空，后续填入) ---
-stripe.api_key = "sk_test_..." # 稍后从 Stripe 后台获取
-STRIPE_WEBHOOK_SECRET = "whsec_..." # 稍后配置 Webhook 时获取
-FRONTEND_URL = "http://localhost:3000" # 支付成功后跳回的地址
+# 从 Render 的环境变量中读取密钥
+stripe.api_key = os.getenv("STRIPE_API_KEY") 
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+# 设置你的 Vercel 前端地址 (注意：结尾不要带斜杠)
+# 这样设置：优先读取环境变量，如果没有配置则使用你的 Vercel 生产地址
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://pipe-calc-frontend0412.vercel.app")
+
 
 @app.get("/")
 def home():
